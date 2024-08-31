@@ -1,3 +1,4 @@
+// Global variables
 let scene, camera, renderer, controls, transformControls;
 let walls = [], floor;
 let objects = [];
@@ -22,10 +23,6 @@ let textureRotationAngle = 0;
 // Pour détecter les triple-clics
 let clickCount = 0;
 let clickTimer;
-
-
-
-
 
 function init() {
     scene = new THREE.Scene();
@@ -63,9 +60,10 @@ function init() {
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
 
-    // Gestion des clics et double-clics
+    // Gestion des clics, double-clics et des interactions tactiles
     renderer.domElement.addEventListener('click', onClick, false);
     renderer.domElement.addEventListener('dblclick', onDoubleClick, false);
+    renderer.domElement.addEventListener('touchstart', onTouchStart, false);
     window.addEventListener('resize', onWindowResize, false);
 
     animate();
@@ -75,8 +73,6 @@ function init() {
         ambientLight.intensity = intensity;
     });
 }
-
-
 
 function createWalls() {
     const wallGeometry = new THREE.PlaneGeometry(5, 3);
@@ -195,6 +191,27 @@ function onClick(event) {
         if (walls.includes(clickedObject) || clickedObject === floor) {
             selectWall(clickedObject);
             handleTripleClick(); // Gérer le triple-clic pour ajuster la rotation
+        }
+    }
+}
+
+// Fonction pour gérer les interactions tactiles
+function onTouchStart(event) {
+    event.preventDefault();
+    if (event.touches.length > 0) {
+        const touch = event.touches[0];
+        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects([...walls, floor], true);
+
+        if (intersects.length > 0) {
+            const clickedObject = intersects[0].object;
+            if (walls.includes(clickedObject) || clickedObject === floor) {
+                selectWall(clickedObject);
+                handleTripleClick(); // Gérer le triple-clic pour ajuster la rotation
+            }
         }
     }
 }
