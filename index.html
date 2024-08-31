@@ -32,6 +32,9 @@
             <input type="range" id="lightIntensity" min="0" max="2" step="0.1" value="0.5" class="slider">
             <button id="undoAction" class="btn">Annuler</button>
             <button id="redoAction" class="btn">Rétablir</button>
+            <button id="modeTranslate" class="btn">Déplacement</button>
+<button id="modeRotate"class="btn" >Rotation</button>
+
         </div>
     </div>
     
@@ -65,10 +68,11 @@
     <!-- Palette de modèles pour les miroirs -->
     <div id="mirrorPalette" class="model-palette">
         <h3>Miroirs</h3>
-        <img src="/images/miroir.glb" class="model-option" data-type="mirror" alt="Miroir 1">
+        <img src="/images/mdlwclock02.obj" class="model-option" data-type="mirror" alt="Miroir 1">
         
     </div>
-
+    
+    
     <!-- Scripts Three.js et ses modules -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>

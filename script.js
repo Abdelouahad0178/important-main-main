@@ -43,7 +43,7 @@ function init() {
     scene.add(transformControls);
 
     transformControls.addEventListener('dragging-changed', function(event) {
-        controls.enabled = !event.value;
+        controls.enabled = !event.value; // Désactiver les contrôles de caméra pendant le drag
     });
 
     createWalls();
@@ -66,6 +66,10 @@ function init() {
     renderer.domElement.addEventListener('dblclick', onDoubleClick, false);
     window.addEventListener('resize', onWindowResize, false);
 
+    // Add event listeners for transform controls mode change
+    document.getElementById('modeTranslate').addEventListener('click', () => setTransformMode('translate'), false);
+    document.getElementById('modeRotate').addEventListener('click', () => setTransformMode('rotate'), false);
+
     animate();
 
     document.getElementById('lightIntensity').addEventListener('input', function (event) {
@@ -75,16 +79,27 @@ function init() {
 }
 
 function createWalls() {
-    const wallGeometry = new THREE.PlaneGeometry(5, 3);
+    // Dimensions des murs : largeur, hauteur, épaisseur
+    const wallWidth = 5;
+    const wallHeight = 3;
+    const wallThickness = 0.2; // Épaisseur des murs
+
+    // Géométrie des murs avec épaisseur
+    const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallThickness);
+
+    // Couleur entre le noir et le bleu : bleu très foncé
+    const wallColor = 0xf4f4f9; // Couleur hexadécimale pour un bleu très foncé
 
     for (let i = 0; i < 2; i++) {
-        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        const wallMaterial = new THREE.MeshStandardMaterial({ color: wallColor });
         walls[i] = new THREE.Mesh(wallGeometry, wallMaterial);
 
         if (i === 0) {
-            walls[i].position.set(0, 1.5, -2.5);
+            // Position du premier mur
+            walls[i].position.set(0, wallHeight / 2, -wallWidth / 2 - wallThickness / 2);
         } else {
-            walls[i].position.set(-2.5, 1.5, 0);
+            // Position du deuxième mur, rotation de 90 degrés pour être perpendiculaire au premier
+            walls[i].position.set(-wallWidth / 2 - wallThickness / 2, wallHeight / 2, 0);
             walls[i].rotation.y = Math.PI / 2;
         }
 
@@ -240,7 +255,11 @@ function selectObject(object) {
     selectedObject = object;
     if (object && object.userData.isMovable) {
         transformControls.attach(object);
-        console.log("Objet sélectionné :", selectedObject);
+        transformControls.setMode('translate'); // Activer le mode de déplacement
+        transformControls.showX = true; // Activer le déplacement sur l'axe X
+        transformControls.showY = true; // Activer le déplacement sur l'axe Y
+        transformControls.showZ = true; // Activer le déplacement sur l'axe Z
+        console.log("Objet sélectionné et prêt pour rotation et déplacement :", selectedObject);
     }
 }
 
@@ -363,6 +382,24 @@ document.getElementById('addBidet').addEventListener('click', () => {
     }
 });
 document.getElementById('removeObject').addEventListener('click', removeObject);
+
+// Fonction pour changer le mode de transformation
+function setTransformMode(mode) {
+    if (['translate', 'rotate'].includes(mode)) {
+        transformControls.setMode(mode);
+        if (mode === 'translate') {
+            transformControls.showX = true;
+            transformControls.showY = true;
+            transformControls.showZ = true;
+        } else if (mode === 'rotate') {
+            transformControls.showX = true;
+            transformControls.showY = true;
+            transformControls.showZ = true;
+        }
+    } else {
+        console.error('Mode de transformation non reconnu :', mode);
+    }
+}
 
 // Initialisation de la scène
 init();
