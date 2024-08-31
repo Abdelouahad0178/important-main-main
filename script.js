@@ -60,10 +60,10 @@ function init() {
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
 
-    // Gestion des clics, double-clics et des interactions tactiles
-    renderer.domElement.addEventListener('click', onClick, false);
+    // Unifier les clics de souris et les interactions tactiles
+    renderer.domElement.addEventListener('click', handleInteraction, false);
+    renderer.domElement.addEventListener('touchstart', handleInteraction, false);
     renderer.domElement.addEventListener('dblclick', onDoubleClick, false);
-    renderer.domElement.addEventListener('touchstart', onTouchStart, false);
     window.addEventListener('resize', onWindowResize, false);
 
     animate();
@@ -179,39 +179,32 @@ function selectWall(wall) {
     console.log('Élément sélectionné pour la texture :', wall);
 }
 
-function onClick(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+// Fonction unifiée pour gérer les clics et les interactions tactiles
+function handleInteraction(event) {
+    event.preventDefault();
+
+    // Récupérer les coordonnées de l'événement de clic ou de l'interaction tactile
+    let clientX, clientY;
+
+    if (event.type === 'touchstart' && event.touches.length > 0) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+    } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
+
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects([...walls, floor], true); // Vérifie les murs et le sol
+    const intersects = raycaster.intersectObjects([...walls, floor], true);
 
     if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
         if (walls.includes(clickedObject) || clickedObject === floor) {
             selectWall(clickedObject);
             handleTripleClick(); // Gérer le triple-clic pour ajuster la rotation
-        }
-    }
-}
-
-// Fonction pour gérer les interactions tactiles
-function onTouchStart(event) {
-    event.preventDefault();
-    if (event.touches.length > 0) {
-        const touch = event.touches[0];
-        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects([...walls, floor], true);
-
-        if (intersects.length > 0) {
-            const clickedObject = intersects[0].object;
-            if (walls.includes(clickedObject) || clickedObject === floor) {
-                selectWall(clickedObject);
-                handleTripleClick(); // Gérer le triple-clic pour ajuster la rotation
-            }
         }
     }
 }
