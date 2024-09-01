@@ -24,9 +24,14 @@ let textureRotationAngle = 0;
 let clickCount = 0;
 let clickTimer;
 
+document.addEventListener('DOMContentLoaded', function() {
+    init();
+    addEventListeners();
+});
+
 function init() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('scene') });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -36,75 +41,128 @@ function init() {
     controls.dampingFactor = 0.25;
     controls.screenSpacePanning = false;
     controls.minDistance = 1;
-    controls.maxDistance = 10;
-    controls.maxPolarAngle = Math.PI;
+    controls.maxDistance = 15;
+    controls.maxPolarAngle = Math.PI / 2;
 
     transformControls = new THREE.TransformControls(camera, renderer.domElement);
     scene.add(transformControls);
 
     transformControls.addEventListener('dragging-changed', function(event) {
-        controls.enabled = !event.value; // Désactiver les contrôles de caméra pendant le drag
+        controls.enabled = !event.value;
     });
 
     createWalls();
     createFloor();
 
-    // Positionnez la caméra pour faire face à Mur 1
-    camera.position.set(0, 1.5, 5); // Position de la caméra
-    camera.lookAt(0, 1.5, -2.5); // Orientation de la caméra vers Mur 1 (à ajuster en fonction des positions exactes)
+    camera.position.set(0, 2, 6);
+    camera.lookAt(0, 1.5, 0);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
 
-    // Unifier les clics de souris et les interactions tactiles
     renderer.domElement.addEventListener('click', handleInteraction, false);
     renderer.domElement.addEventListener('touchstart', handleInteraction, false);
     renderer.domElement.addEventListener('dblclick', onDoubleClick, false);
     window.addEventListener('resize', onWindowResize, false);
 
-    // Add event listeners for transform controls mode change
+    initializeTextureEvents();
+    animate();
+}
+
+function addEventListeners() {
     document.getElementById('modeTranslate').addEventListener('click', () => setTransformMode('translate'), false);
     document.getElementById('modeRotate').addEventListener('click', () => setTransformMode('rotate'), false);
-
-    animate();
-
-    document.getElementById('lightIntensity').addEventListener('input', function (event) {
+    document.getElementById('lightIntensity').addEventListener('input', function(event) {
         const intensity = parseFloat(event.target.value);
-        ambientLight.intensity = intensity;
+        const ambientLight = scene.getObjectByProperty('type', 'AmbientLight');
+        if (ambientLight) {
+            ambientLight.intensity = intensity;
+        }
+    });
+    document.getElementById('searchTile').addEventListener('input', filterTiles);
+    document.getElementById('sinkModelInput').addEventListener('change', event => handleModelFile(event), false);
+    document.getElementById('addSink').addEventListener('click', () => {
+        if (sinkModel) {
+            addObject(sinkModel.clone(), 'sink');
+        } else {
+            alert('Veuillez d\'abord charger un modèle de lavabo.');
+        }
+    });
+    document.getElementById('addMirror').addEventListener('click', () => {
+        if (mirrorModel) {
+            addObject(mirrorModel.clone(), 'mirror');
+        } else {
+            alert('Veuillez d\'abord charger un modèle de miroir.');
+        }
+    });
+    document.getElementById('addBidet').addEventListener('click', () => {
+        if (bidetModel) {
+            addObject(bidetModel.clone(), 'bidet');
+        } else {
+            alert('Veuillez d\'abord charger un modèle de bidet.');
+        }
+    });
+    document.getElementById('removeObject').addEventListener('click', removeObject);
+    document.getElementById('saveScene').addEventListener('click', saveScene);
+    document.getElementById('loadScene').addEventListener('click', loadScene);
+}
+
+function initializeTextureEvents() {
+    document.querySelectorAll('.texture-option').forEach((img) => {
+        img.addEventListener('click', () => {
+            const textureLoader = new THREE.TextureLoader();
+            selectedTexture = textureLoader.load(img.src, () => {
+                console.log('Texture chargée :', img.src);
+                applySelectedTexture();
+            });
+        });
     });
 }
 
+
+function filterTiles() {
+    const searchInput = document.getElementById('searchTile').value.toLowerCase();
+    const textureOptions = document.querySelectorAll('.texture-option');
+
+    textureOptions.forEach((texture) => {
+        const altText = texture.alt.toLowerCase();
+        if (altText.includes(searchInput)) {
+            texture.style.display = 'block'; // Affiche les textures correspondant à la recherche
+        } else {
+            texture.style.display = 'none'; // Masque les textures qui ne correspondent pas
+        }
+    });
+}
+
+
+
+
 function createWalls() {
-    // Dimensions des murs : largeur, hauteur, épaisseur
     const wallWidth = 5;
     const wallHeight = 3;
-    const wallThickness = 0.2; // Épaisseur des murs
+    const wallThickness = 0.2;
 
-    // Géométrie des murs avec épaisseur
     const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallThickness);
-
-    // Couleur entre le noir et le bleu : bleu très foncé
-    const wallColor = 0xf4f4f9; // Couleur hexadécimale pour un bleu très foncé
+    const wallColor = 0xf4f4f9;
 
     for (let i = 0; i < 2; i++) {
         const wallMaterial = new THREE.MeshStandardMaterial({ color: wallColor });
         walls[i] = new THREE.Mesh(wallGeometry, wallMaterial);
 
         if (i === 0) {
-            // Position du premier mur
             walls[i].position.set(0, wallHeight / 2, -wallWidth / 2 - wallThickness / 2);
         } else {
-            // Position du deuxième mur, rotation de 90 degrés pour être perpendiculaire au premier
             walls[i].position.set(-wallWidth / 2 - wallThickness / 2, wallHeight / 2, 0);
             walls[i].rotation.y = Math.PI / 2;
         }
 
+        walls[i].rotation.x = 0;
         scene.add(walls[i]);
-        objects.push(walls[i]);  // Ajouter les murs aux objets cliquables
+        objects.push(walls[i]);
     }
 }
 
@@ -114,52 +172,46 @@ function createFloor() {
     floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
-    objects.push(floor);  // Ajouter le sol aux objets cliquables
+    objects.push(floor);
 }
 
 function applySelectedTexture() {
     if (selectedWall && selectedTexture) {
         selectedTexture.wrapS = THREE.RepeatWrapping;
         selectedTexture.wrapT = THREE.RepeatWrapping;
-        selectedTexture.center.set(0.5, 0.5); // Centrer la texture pour la rotation
+        selectedTexture.center.set(0.5, 0.5);
 
-        // Définir l'épaisseur des joints
-        let groutThickness = 0.25; // Augmenter cette valeur pour des joints plus épais
+        let groutThickness = 0.5;
 
-        // Ajuster les proportions pour éviter la déformation et inclure les joints
         const aspectRatio = selectedTexture.image.width / selectedTexture.image.height;
         let repeatX, repeatY;
 
-        // Calcul des répétitions en fonction du type de surface
         if (selectedWall === floor) {
-            repeatX = (5 - groutThickness) / aspectRatio;
-            repeatY = 5 - groutThickness;
+            repeatX = 3;
+            repeatY = 3;
         } else {
-            repeatX = (selectedWall.geometry.parameters.width - groutThickness) / aspectRatio;
-            repeatY = selectedWall.geometry.parameters.height - groutThickness;
+            repeatX = 3;
+            repeatY = 3;
         }
 
-        // Appliquer l'effet des joints avec repeat et offset
         selectedTexture.repeat.set(repeatX, repeatY);
         selectedTexture.offset.set(groutThickness / (2 * repeatX), groutThickness / (2 * repeatY));
 
-        // Définir la couleur blanche pour les joints
         selectedWall.material.map = selectedTexture;
-        selectedWall.material.color.set(0xffffff); // Couleur blanche pour les joints
+        selectedWall.material.color.set(0xffffff);
         selectedWall.material.needsUpdate = true;
-        console.log('Texture appliquée avec joints épais blancs autour de chaque pièce de carrelage.');
+        console.log('Texture appliquée avec moins de répétitions pour le sol et les murs.');
     } else {
         console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
     }
 }
 
-// Fonction pour ajuster la rotation de la texture lors d'un triple-clic
 function adjustTextureRotation() {
-    textureRotationAngle += Math.PI / 2; // Incrément de 90 degrés (π/2 radians)
+    textureRotationAngle += Math.PI / 2;
     if (textureRotationAngle >= 2 * Math.PI) {
-        textureRotationAngle = 0; // Réinitialiser après un tour complet
+        textureRotationAngle = 0;
     }
-    selectedTexture.rotation = textureRotationAngle; // Appliquer la rotation
+    selectedTexture.rotation = textureRotationAngle;
     selectedWall.material.needsUpdate = true;
     console.log('Rotation de la texture ajustée à', textureRotationAngle);
 }
@@ -168,37 +220,23 @@ function handleTripleClick() {
     clickCount++;
     if (clickCount === 3) {
         adjustTextureRotation();
-        clickCount = 0; // Réinitialiser le compteur après le triple-clic
+        clickCount = 0;
     }
 
-    // Réinitialiser le compteur après un délai si un triple-clic n'est pas détecté
     clearTimeout(clickTimer);
     clickTimer = setTimeout(() => {
         clickCount = 0;
-    }, 500); // Délai de 500ms pour détecter le triple-clic
+    }, 500);
 }
-
-// Sélectionner une texture dans la palette
-document.querySelectorAll('.texture-option').forEach((img) => {
-    img.addEventListener('click', () => {
-        const textureLoader = new THREE.TextureLoader();
-        selectedTexture = textureLoader.load(img.src, () => {
-            console.log('Texture chargée :', img.src);
-            applySelectedTexture();
-        });
-    });
-});
 
 function selectWall(wall) {
     selectedWall = wall;
     console.log('Élément sélectionné pour la texture :', wall);
 }
 
-// Fonction unifiée pour gérer les clics et les interactions tactiles
 function handleInteraction(event) {
     event.preventDefault();
 
-    // Récupérer les coordonnées de l'événement de clic ou de l'interaction tactile
     let clientX, clientY;
 
     if (event.type === 'touchstart' && event.touches.length > 0) {
@@ -219,7 +257,7 @@ function handleInteraction(event) {
         const clickedObject = intersects[0].object;
         if (walls.includes(clickedObject) || clickedObject === floor) {
             selectWall(clickedObject);
-            handleTripleClick(); // Gérer le triple-clic pour ajuster la rotation
+            handleTripleClick();
         }
     }
 }
@@ -235,7 +273,6 @@ function onDoubleClick(event) {
         const clickedObject = intersects[0].object;
         let parentObject = clickedObject;
 
-        // Parcourir les parents pour trouver l'objet sélectionnable
         while (parentObject && !parentObject.userData.isMovable) {
             parentObject = parentObject.parent;
         }
@@ -255,10 +292,10 @@ function selectObject(object) {
     selectedObject = object;
     if (object && object.userData.isMovable) {
         transformControls.attach(object);
-        transformControls.setMode('translate'); // Activer le mode de déplacement
-        transformControls.showX = true; // Activer le déplacement sur l'axe X
-        transformControls.showY = true; // Activer le déplacement sur l'axe Y
-        transformControls.showZ = true; // Activer le déplacement sur l'axe Z
+        transformControls.setMode('translate');
+        transformControls.showX = true;
+        transformControls.showY = true;
+        transformControls.showZ = true;
         console.log("Objet sélectionné et prêt pour rotation et déplacement :", selectedObject);
     }
 }
@@ -352,54 +389,104 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
-
 function saveAction(action, object) {
     actionHistory.push({ action, object });
     redoStack = [];
 }
 
-// Gestion des interactions avec les modèles chargés
-document.getElementById('sinkModelInput').addEventListener('change', event => handleModelFile(event), false);
-document.getElementById('addSink').addEventListener('click', () => {
-    if (sinkModel) {
-        addObject(sinkModel.clone(), 'sink');
-    } else {
-        alert('Veuillez d\'abord charger un modèle de lavabo.');
-    }
-});
-document.getElementById('addMirror').addEventListener('click', () => {
-    if (mirrorModel) {
-        addObject(mirrorModel.clone(), 'mirror');
-    } else {
-        alert('Veuillez d\'abord charger un modèle de miroir.');
-    }
-});
-document.getElementById('addBidet').addEventListener('click', () => {
-    if (bidetModel) {
-        addObject(bidetModel.clone(), 'bidet');
-    } else {
-        alert('Veuillez d\'abord charger un modèle de bidet.');
-    }
-});
-document.getElementById('removeObject').addEventListener('click', removeObject);
-
-// Fonction pour changer le mode de transformation
 function setTransformMode(mode) {
     if (['translate', 'rotate'].includes(mode)) {
         transformControls.setMode(mode);
-        if (mode === 'translate') {
-            transformControls.showX = true;
-            transformControls.showY = true;
-            transformControls.showZ = true;
-        } else if (mode === 'rotate') {
-            transformControls.showX = true;
-            transformControls.showY = true;
-            transformControls.showZ = true;
-        }
+        transformControls.showX = true;
+        transformControls.showY = true;
+        transformControls.showZ = true;
     } else {
         console.error('Mode de transformation non reconnu :', mode);
     }
 }
 
-// Initialisation de la scène
+function saveScene() {
+    const sceneData = {
+        walls: walls.map(wall => ({
+            position: wall.position.toArray(),
+            rotation: wall.rotation.toArray(),
+            texture: wall.material.map ? wall.material.map.image.src : null
+        })),
+        floor: {
+            position: floor.position.toArray(),
+            rotation: floor.rotation.toArray(),
+            texture: floor.material.map ? floor.material.map.image.src : null
+        },
+        objects: objects.filter(obj => obj.userData.isMovable).map(obj => ({
+            type: obj.userData.type,
+            position: obj.position.toArray(),
+            rotation: obj.rotation.toArray(),
+            scale: obj.scale.toArray()
+        }))
+    };
+    
+    localStorage.setItem('bathroomScene', JSON.stringify(sceneData));
+    console.log('Scène sauvegardée');
+}
+
+function loadScene() {
+    const sceneData = JSON.parse(localStorage.getItem('bathroomScene'));
+    if (sceneData) {
+        // Charger les murs
+        sceneData.walls.forEach((wallData, index) => {
+            walls[index].position.fromArray(wallData.position);
+            walls[index].rotation.fromArray(wallData.rotation);
+            if (wallData.texture) {
+                applyTextureToObject(walls[index], wallData.texture);
+            }
+        });
+
+        // Charger le sol
+        floor.position.fromArray(sceneData.floor.position);
+        floor.rotation.fromArray(sceneData.floor.rotation);
+        if (sceneData.floor.texture) {
+            applyTextureToObject(floor, sceneData.floor.texture);
+        }
+
+        // Charger les objets
+        sceneData.objects.forEach(objData => {
+            let model;
+            switch (objData.type) {
+                case 'sink':
+                    model = sinkModel;
+                    break;
+                case 'mirror':
+                    model = mirrorModel;
+                    break;
+                case 'bidet':
+                    model = bidetModel;
+                    break;
+            }
+            if (model) {
+                const newObj = model.clone();
+                newObj.position.fromArray(objData.position);
+                newObj.rotation.fromArray(objData.rotation);
+                newObj.scale.fromArray(objData.scale);
+                newObj.userData.type = objData.type;
+                newObj.userData.isMovable = true;
+                scene.add(newObj);
+                objects.push(newObj);
+            }
+        });
+
+        console.log('Scène chargée');
+    } else {
+        console.log('Aucune scène sauvegardée trouvée');
+    }
+}
+
+function applyTextureToObject(object, textureSrc) {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(textureSrc, (texture) => {
+        object.material.map = texture;
+        object.material.needsUpdate = true;
+    });
+}
+
+// Initialisation de l'application
 init();
