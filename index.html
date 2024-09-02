@@ -32,6 +32,10 @@
             <input type="range" id="lightIntensity" min="0" max="2" step="0.1" value="0.5" class="slider">
             <button id="undoAction" class="btn">Annuler</button>
             <button id="redoAction" class="btn">Rétablir</button>
+
+            <input type="file" id="tileTextureInput" accept="image/*" class="file-input">
+            <label for="tileTextureInput" class="file-label">Importer Carrelage</label>
+
             <button id="saveScene" class="btn">Sauvegarder Scène</button>
             <button id="saveImageButton" class="btn">Sauvegarder l'image</button>
             <button id="modeTranslate" class="btn">Déplacement</button>
@@ -49,6 +53,9 @@
         <img src="/images/d3d_default_0088923_11.jpg" class="texture-option" alt="Default Texture 2">
         <img src="/images/b_fondovalle_urban_craft_ubc007_plaster120x278.webp" class="texture-option" alt="Urban Craft Plaster">
     </div>
+
+    <!-- New input for importing tile textures -->
+   
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>

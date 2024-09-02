@@ -105,6 +105,9 @@ function addEventListeners() {
     document.getElementById('removeObject').addEventListener('click', removeObject);
     document.getElementById('saveScene').addEventListener('click', saveScene);
     document.getElementById('saveImageButton').addEventListener('click', saveSceneAsImage);
+    
+    // Add event listener for the new tile texture input
+    document.getElementById('tileTextureInput').addEventListener('change', handleTileTextureInput);
 }
 
 function initializeTextureEvents() {
@@ -471,5 +474,21 @@ function saveSceneAsImage() {
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la scène en image :', error);
         alert('Erreur lors de la sauvegarde de l\'image. Veuillez réessayer.');
+    }
+}
+
+// New function to handle tile texture import from a local file
+function handleTileTextureInput(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(e.target.result, () => {
+                selectedTexture = texture;
+                applySelectedTexture();
+            });
+        };
+        reader.readAsDataURL(file);
     }
 }
