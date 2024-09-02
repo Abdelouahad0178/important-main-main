@@ -16,12 +16,8 @@ let bidetModel = null;
 let actionHistory = [];
 let redoStack = [];
 let selectedTexture = null;
-
-// Variable pour gérer la rotation de la texture
-let textureRotationAngle = 0;
-
-// Pour détecter les triple-clics
-let clickCount = 0;
+let textureRotationAngle = 0; // Variable to manage texture rotation
+let clickCount = 0; // For triple-click detection
 let clickTimer;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -116,7 +112,6 @@ function initializeTextureEvents() {
         img.addEventListener('click', () => {
             const textureLoader = new THREE.TextureLoader();
             selectedTexture = textureLoader.load(img.src, () => {
-                console.log('Texture chargée :', img.src);
                 applySelectedTexture();
             });
         });
@@ -130,9 +125,9 @@ function filterTiles() {
     textureOptions.forEach((texture) => {
         const altText = texture.alt.toLowerCase();
         if (altText.includes(searchInput)) {
-            texture.style.display = 'block'; // Affiche les textures correspondant à la recherche
+            texture.style.display = 'block';
         } else {
-            texture.style.display = 'none'; // Masque les textures qui ne correspondent pas
+            texture.style.display = 'none';
         }
     });
 }
@@ -176,20 +171,10 @@ function applySelectedTexture() {
         selectedTexture.wrapS = THREE.RepeatWrapping;
         selectedTexture.wrapT = THREE.RepeatWrapping;
         selectedTexture.center.set(0.5, 0.5);
-
-        let groutThickness = 0.5;
-
-        const aspectRatio = selectedTexture.image.width / selectedTexture.image.height;
-        let repeatX = 3;
-        let repeatY = 3;
-
-        selectedTexture.repeat.set(repeatX, repeatY);
-        selectedTexture.offset.set(groutThickness / (2 * repeatX), groutThickness / (2 * repeatY));
-
+        selectedTexture.repeat.set(3, 3);
         selectedWall.material.map = selectedTexture;
         selectedWall.material.color.set(0xffffff);
         selectedWall.material.needsUpdate = true;
-        console.log('Texture appliquée avec moins de répétitions pour le sol et les murs.');
     } else {
         console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
     }
@@ -203,7 +188,6 @@ function adjustTextureRotation() {
         }
         selectedWall.material.map.rotation = textureRotationAngle;
         selectedWall.material.needsUpdate = true;
-        console.log('Rotation de la texture ajustée à', textureRotationAngle);
     } else {
         console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
     }
@@ -224,7 +208,6 @@ function handleTripleClick() {
 
 function selectWall(wall) {
     selectedWall = wall;
-    console.log('Élément sélectionné pour la texture :', wall);
 }
 
 function handleInteraction(event) {
@@ -286,10 +269,6 @@ function selectObject(object) {
     if (object && object.userData.isMovable) {
         transformControls.attach(object);
         transformControls.setMode('translate');
-        transformControls.showX = true;
-        transformControls.showY = true;
-        transformControls.showZ = true;
-        console.log("Objet sélectionné et prêt pour rotation et déplacement :", selectedObject);
     }
 }
 
@@ -300,7 +279,6 @@ function removeObject() {
         objects = objects.filter(obj => obj !== selectedObject);
         transformControls.detach();
         selectedObject = null;
-        console.log("Objet supprimé. Objets restants :", objects);
     }
 }
 
@@ -343,8 +321,6 @@ function handleModelLoad(model, type) {
     } else if (type === 'bidet') {
         bidetModel = model;
     }
-
-    console.log(`Modèle ${type} chargé avec succès`);
 }
 
 function centerModel(model) {
@@ -368,7 +344,6 @@ function addObject(model, type) {
     objects.push(model);
     selectObject(model);
     saveAction('add', model);
-    console.log("Objet ajouté à la scène :", model);
 }
 
 function onWindowResize() {
@@ -391,16 +366,13 @@ function saveAction(action, object) {
 function setTransformMode(mode) {
     if (['translate', 'rotate'].includes(mode)) {
         transformControls.setMode(mode);
-        transformControls.showX = true;
-        transformControls.showY = true;
-        transformControls.showZ = true;
     } else {
         console.error('Mode de transformation non reconnu :', mode);
     }
 }
+
 function saveScene() {
     try {
-        // Prépare les données de la scène à sauvegarder
         const sceneData = {
             walls: walls.map(wall => ({
                 position: wall.position.toArray(),
@@ -420,11 +392,7 @@ function saveScene() {
             }))
         };
 
-        // Convertit les données en une chaîne JSON et les stocke dans le localStorage
         localStorage.setItem('bathroomScene', JSON.stringify(sceneData));
-        console.log('Scène sauvegardée avec succès');
-
-        // Affiche une alerte pour confirmer la sauvegarde
         alert('Scène sauvegardée avec succès!');
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la scène :', error);
@@ -432,11 +400,9 @@ function saveScene() {
     }
 }
 
-
 function loadScene() {
     const sceneData = JSON.parse(localStorage.getItem('bathroomScene'));
     if (sceneData) {
-        // Charger les murs
         sceneData.walls.forEach((wallData, index) => {
             walls[index].position.fromArray(wallData.position);
             walls[index].rotation.fromArray(wallData.rotation);
@@ -445,14 +411,12 @@ function loadScene() {
             }
         });
 
-        // Charger le sol
         floor.position.fromArray(sceneData.floor.position);
         floor.rotation.fromArray(sceneData.floor.rotation);
         if (sceneData.floor.texture) {
             applyTextureToObject(floor, sceneData.floor.texture);
         }
 
-        // Charger les objets
         sceneData.objects.forEach(objData => {
             let model;
             switch (objData.type) {
@@ -477,8 +441,6 @@ function loadScene() {
                 objects.push(newObj);
             }
         });
-
-        console.log('Scène chargée');
     } else {
         console.log('Aucune scène sauvegardée trouvée');
     }
@@ -492,5 +454,5 @@ function applyTextureToObject(object, textureSrc) {
     });
 }
 
-// Initialisation de l'application
+// Initialize the application
 init();
