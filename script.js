@@ -123,7 +123,6 @@ function initializeTextureEvents() {
     });
 }
 
-
 function filterTiles() {
     const searchInput = document.getElementById('searchTile').value.toLowerCase();
     const textureOptions = document.querySelectorAll('.texture-option');
@@ -137,9 +136,6 @@ function filterTiles() {
         }
     });
 }
-
-
-
 
 function createWalls() {
     const wallWidth = 5;
@@ -184,15 +180,8 @@ function applySelectedTexture() {
         let groutThickness = 0.5;
 
         const aspectRatio = selectedTexture.image.width / selectedTexture.image.height;
-        let repeatX, repeatY;
-
-        if (selectedWall === floor) {
-            repeatX = 3;
-            repeatY = 3;
-        } else {
-            repeatX = 3;
-            repeatY = 3;
-        }
+        let repeatX = 3;
+        let repeatY = 3;
 
         selectedTexture.repeat.set(repeatX, repeatY);
         selectedTexture.offset.set(groutThickness / (2 * repeatX), groutThickness / (2 * repeatY));
@@ -207,13 +196,17 @@ function applySelectedTexture() {
 }
 
 function adjustTextureRotation() {
-    textureRotationAngle += Math.PI / 2;
-    if (textureRotationAngle >= 2 * Math.PI) {
-        textureRotationAngle = 0;
+    if (selectedWall && selectedWall.material.map) {
+        textureRotationAngle += Math.PI / 2;
+        if (textureRotationAngle >= 2 * Math.PI) {
+            textureRotationAngle = 0;
+        }
+        selectedWall.material.map.rotation = textureRotationAngle;
+        selectedWall.material.needsUpdate = true;
+        console.log('Rotation de la texture ajustée à', textureRotationAngle);
+    } else {
+        console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
     }
-    selectedTexture.rotation = textureRotationAngle;
-    selectedWall.material.needsUpdate = true;
-    console.log('Rotation de la texture ajustée à', textureRotationAngle);
 }
 
 function handleTripleClick() {
@@ -389,6 +382,7 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
+
 function saveAction(action, object) {
     actionHistory.push({ action, object });
     redoStack = [];
@@ -404,30 +398,40 @@ function setTransformMode(mode) {
         console.error('Mode de transformation non reconnu :', mode);
     }
 }
-
 function saveScene() {
-    const sceneData = {
-        walls: walls.map(wall => ({
-            position: wall.position.toArray(),
-            rotation: wall.rotation.toArray(),
-            texture: wall.material.map ? wall.material.map.image.src : null
-        })),
-        floor: {
-            position: floor.position.toArray(),
-            rotation: floor.rotation.toArray(),
-            texture: floor.material.map ? floor.material.map.image.src : null
-        },
-        objects: objects.filter(obj => obj.userData.isMovable).map(obj => ({
-            type: obj.userData.type,
-            position: obj.position.toArray(),
-            rotation: obj.rotation.toArray(),
-            scale: obj.scale.toArray()
-        }))
-    };
-    
-    localStorage.setItem('bathroomScene', JSON.stringify(sceneData));
-    console.log('Scène sauvegardée');
+    try {
+        // Prépare les données de la scène à sauvegarder
+        const sceneData = {
+            walls: walls.map(wall => ({
+                position: wall.position.toArray(),
+                rotation: wall.rotation.toArray(),
+                texture: wall.material.map ? wall.material.map.image.src : null
+            })),
+            floor: {
+                position: floor.position.toArray(),
+                rotation: floor.rotation.toArray(),
+                texture: floor.material.map ? floor.material.map.image.src : null
+            },
+            objects: objects.filter(obj => obj.userData.isMovable).map(obj => ({
+                type: obj.userData.type,
+                position: obj.position.toArray(),
+                rotation: obj.rotation.toArray(),
+                scale: obj.scale.toArray()
+            }))
+        };
+
+        // Convertit les données en une chaîne JSON et les stocke dans le localStorage
+        localStorage.setItem('bathroomScene', JSON.stringify(sceneData));
+        console.log('Scène sauvegardée avec succès');
+
+        // Affiche une alerte pour confirmer la sauvegarde
+        alert('Scène sauvegardée avec succès!');
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde de la scène :', error);
+        alert('Erreur lors de la sauvegarde de la scène. Veuillez réessayer.');
+    }
 }
+
 
 function loadScene() {
     const sceneData = JSON.parse(localStorage.getItem('bathroomScene'));

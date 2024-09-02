@@ -8,7 +8,7 @@
 </head>
 <body>
     <canvas id="scene"></canvas>
-    
+
     <div id="controls" class="controls">
         <div class="file-inputs">
             <input type="file" id="textureInput" multiple accept="image/*" class="file-input">
@@ -41,7 +41,6 @@
     <!-- Palette de textures pour les carrelages -->
     <div id="texturePalette" class="texture-palette">
         <h3 style="color: white;">Textures</h3>
-        <!-- Zone de recherche pour les carrelages -->
         <input type="text" id="searchTile" placeholder="Rechercher un carrelage..." style="margin-bottom: 10px; padding: 5px; width: 90%; border-radius: 4px; border: 1px solid #ccc;">
         
         <img src="/images/CalacattaGold01_460x.webp" class="texture-option" alt="Calacatta Gold">
@@ -49,21 +48,6 @@
         <img src="/images/d3d_default_0005362_12.jpg" class="texture-option" alt="Default Texture 1">
         <img src="/images/d3d_default_0088923_11.jpg" class="texture-option" alt="Default Texture 2">
         <img src="/images/b_fondovalle_urban_craft_ubc007_plaster120x278.webp" class="texture-option" alt="Urban Craft Plaster">
-    </div>
-
-    <div id="sinkPalette" class="model-palette">
-        <h3>Lavabos</h3>
-        <img src="/images/LAVABO.glb" class="model-option" data-type="sink" alt="Lavabo 1">
-    </div>
-
-    <div id="bidetPalette" class="model-palette">
-        <h3>Bidets</h3>
-        <img src="/images/bidet.glb" class="model-option" data-type="bidet" alt="Bidet 1">
-    </div>
-
-    <div id="mirrorPalette" class="model-palette">
-        <h3>Miroirs</h3>
-        <img src="/images/mdlwclock02.obj" class="model-option" data-type="mirror" alt="Miroir 1">
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
