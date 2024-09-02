@@ -16,11 +16,11 @@ let bidetModel = null;
 let actionHistory = [];
 let redoStack = [];
 let selectedTexture = null;
-let textureRotationAngle = 0; // Variable to manage texture rotation
-let clickCount = 0; // For triple-click detection
+let textureRotationAngle = 0;
+let clickCount = 0;
 let clickTimer;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     init();
     addEventListeners();
 });
@@ -43,7 +43,7 @@ function init() {
     transformControls = new THREE.TransformControls(camera, renderer.domElement);
     scene.add(transformControls);
 
-    transformControls.addEventListener('dragging-changed', function(event) {
+    transformControls.addEventListener('dragging-changed', function (event) {
         controls.enabled = !event.value;
     });
 
@@ -72,7 +72,7 @@ function init() {
 function addEventListeners() {
     document.getElementById('modeTranslate').addEventListener('click', () => setTransformMode('translate'), false);
     document.getElementById('modeRotate').addEventListener('click', () => setTransformMode('rotate'), false);
-    document.getElementById('lightIntensity').addEventListener('input', function(event) {
+    document.getElementById('lightIntensity').addEventListener('input', function (event) {
         const intensity = parseFloat(event.target.value);
         const ambientLight = scene.getObjectByProperty('type', 'AmbientLight');
         if (ambientLight) {
@@ -104,7 +104,7 @@ function addEventListeners() {
     });
     document.getElementById('removeObject').addEventListener('click', removeObject);
     document.getElementById('saveScene').addEventListener('click', saveScene);
-    document.getElementById('loadScene').addEventListener('click', loadScene);
+    document.getElementById('saveImageButton').addEventListener('click', saveSceneAsImage);
 }
 
 function initializeTextureEvents() {
@@ -151,7 +151,6 @@ function createWalls() {
             walls[i].rotation.y = Math.PI / 2;
         }
 
-        walls[i].rotation.x = 0;
         scene.add(walls[i]);
         objects.push(walls[i]);
     }
@@ -287,12 +286,12 @@ function handleModelFile(event) {
     const type = event.target.dataset.type;
     if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             const arrayBuffer = e.target.result;
             const extension = file.name.split('.').pop().toLowerCase();
 
             if (extension === 'gltf' || extension === 'glb') {
-                gltfLoader.parse(arrayBuffer, '', function(gltf) {
+                gltfLoader.parse(arrayBuffer, '', function (gltf) {
                     handleModelLoad(gltf.scene, type);
                 });
             } else if (extension === 'obj') {
@@ -300,7 +299,7 @@ function handleModelFile(event) {
                 const objModel = objLoader.parse(text);
                 handleModelLoad(objModel, type);
             } else if (extension === 'fbx') {
-                fbxLoader.parse(arrayBuffer, function(fbx) {
+                fbxLoader.parse(arrayBuffer, function (fbx) {
                     handleModelLoad(fbx, type);
                 });
             }
@@ -396,7 +395,7 @@ function saveScene() {
         alert('Scène sauvegardée avec succès!');
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la scène :', error);
-        alert('Erreur lors de la sauvegarde de la scène. Veuillez réessayer.');
+        alert('Erreur lors de la sauvegarde de la scène. Veuillez vérifier les paramètres et réessayer.');
     }
 }
 
@@ -454,5 +453,23 @@ function applyTextureToObject(object, textureSrc) {
     });
 }
 
-// Initialize the application
-init();
+function saveSceneAsImage() {
+    try {
+        // Render the scene and get the image as a data URL
+        renderer.render(scene, camera);
+        const dataURL = renderer.domElement.toDataURL('image/png'); // Change to 'image/jpeg' for JPG format
+
+        // Create a temporary anchor element to trigger the download
+        const a = document.createElement('a');
+        a.href = dataURL;
+        a.download = 'bathroom_scene.png'; // Set the file name and extension
+        document.body.appendChild(a);
+        a.click(); // Trigger the download
+        document.body.removeChild(a);
+
+        alert('La scène a été sauvegardée en tant qu\'image!');
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde de la scène en image :', error);
+        alert('Erreur lors de la sauvegarde de l\'image. Veuillez réessayer.');
+    }
+}

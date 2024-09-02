@@ -24,6 +24,10 @@ canvas {
 }
 
 
+#saveScene ,#printScene{
+    display: none;
+}
+
 .file-inputs, .action-buttons {
     display: flex;
     flex-wrap: wrap;
