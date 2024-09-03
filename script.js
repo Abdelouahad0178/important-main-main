@@ -105,8 +105,6 @@ function addEventListeners() {
     document.getElementById('removeObject').addEventListener('click', removeObject);
     document.getElementById('saveScene').addEventListener('click', saveScene);
     document.getElementById('saveImageButton').addEventListener('click', saveSceneAsImage);
-    
-    // Add event listener for the new tile texture input
     document.getElementById('tileTextureInput').addEventListener('change', handleTileTextureInput);
 }
 
@@ -170,10 +168,22 @@ function createFloor() {
 
 function applySelectedTexture() {
     if (selectedWall && selectedTexture) {
+        const textureAspectRatio = selectedTexture.image.width / selectedTexture.image.height;
+        let objectAspectRatio = selectedWall.geometry.parameters.width / selectedWall.geometry.parameters.height;
+
+        let repeatX = 1, repeatY = 1;
+        if (textureAspectRatio > objectAspectRatio) {
+            repeatX = 3;
+            repeatY = 3 * (objectAspectRatio / textureAspectRatio);
+        } else {
+            repeatY = 3;
+            repeatX = 3 * (textureAspectRatio / objectAspectRatio);
+        }
+
         selectedTexture.wrapS = THREE.RepeatWrapping;
         selectedTexture.wrapT = THREE.RepeatWrapping;
+        selectedTexture.repeat.set(repeatX, repeatY);
         selectedTexture.center.set(0.5, 0.5);
-        selectedTexture.repeat.set(3, 3);
         selectedWall.material.map = selectedTexture;
         selectedWall.material.color.set(0xffffff);
         selectedWall.material.needsUpdate = true;
@@ -458,16 +468,14 @@ function applyTextureToObject(object, textureSrc) {
 
 function saveSceneAsImage() {
     try {
-        // Render the scene and get the image as a data URL
         renderer.render(scene, camera);
-        const dataURL = renderer.domElement.toDataURL('image/png'); // Change to 'image/jpeg' for JPG format
+        const dataURL = renderer.domElement.toDataURL('image/png');
 
-        // Create a temporary anchor element to trigger the download
         const a = document.createElement('a');
         a.href = dataURL;
-        a.download = 'bathroom_scene.png'; // Set the file name and extension
+        a.download = 'bathroom_scene.png';
         document.body.appendChild(a);
-        a.click(); // Trigger the download
+        a.click();
         document.body.removeChild(a);
 
         alert('La scène a été sauvegardée en tant qu\'image!');
@@ -477,7 +485,6 @@ function saveSceneAsImage() {
     }
 }
 
-// New function to handle tile texture import from a local file
 function handleTileTextureInput(event) {
     const file = event.target.files[0];
     if (file) {
