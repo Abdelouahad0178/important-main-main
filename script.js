@@ -1,4 +1,4 @@
-// Global variables
+// Variables globales
 let scene, camera, renderer, controls, transformControls;
 let walls = [], floor;
 let objects = [];
@@ -20,9 +20,17 @@ let textureRotationAngle = 0;
 let clickCount = 0;
 let clickTimer;
 
+// Liste des modèles à charger avec leurs types et chargeurs respectifs
+const modelsToLoad = [
+    { path: '/images/LAVABO.glb', type: 'sink', loader: gltfLoader },
+    { path: '/images/bidet.glb', type: 'bidet', loader: gltfLoader },
+    { path: '/images/mdlwclock02.obj', type: 'mirror', loader: objLoader },
+];
+
 document.addEventListener('DOMContentLoaded', function () {
     init();
     addEventListeners();
+    loadMultipleModels(); // Charge tous les modèles de la liste
 });
 
 function init() {
@@ -69,6 +77,53 @@ function init() {
     animate();
 }
 
+// Charge plusieurs modèles à partir de la liste
+function loadMultipleModels() {
+    modelsToLoad.forEach(model => {
+        loadModel(model.path, model.type, model.loader);
+    });
+}
+
+// Fonction générique pour charger un modèle avec le bon chargeur
+function loadModel(path, type, loader) {
+    loader.load(path, function (model) {
+        let sceneObject;
+        if (type === 'sink' || type === 'bidet') {
+            sceneObject = model.scene; // Pour GLTFLoader
+        } else {
+            sceneObject = model; // Pour OBJLoader
+        }
+
+        // Ajuster l'échelle en fonction du type de modèle
+        if (type === 'bidet') {
+            sceneObject.scale.set(0.001, 0.001, 0.001); // Réduction de l'échelle pour bidet
+        } else if (type === 'mirror') {
+            sceneObject.scale.set(0.01, 0.01, 0.01); // Réduction de l'échelle pour miroir
+        } else {
+            sceneObject.scale.set(0.1, 0.1, 0.1); // Échelle par défaut pour les autres objets
+        }
+
+        sceneObject.position.set(Math.random() * 2 - 1, 0, Math.random() * 2 - 2.4);
+        sceneObject.userData.type = type;
+        sceneObject.userData.isMovable = true;
+
+        scene.add(sceneObject);
+        objects.push(sceneObject);
+
+        if (type === 'sink') {
+            sinkModel = sceneObject;
+        } else if (type === 'mirror') {
+            mirrorModel = sceneObject;
+        } else if (type === 'bidet') {
+            bidetModel = sceneObject;
+        }
+
+        console.log(`Modèle ${type} chargé depuis ${path}.`);
+    }, undefined, function (error) {
+        console.error(`Erreur de chargement du modèle ${type} depuis ${path} :`, error);
+    });
+}
+
 function addEventListeners() {
     document.getElementById('modeTranslate').addEventListener('click', () => setTransformMode('translate'), false);
     document.getElementById('modeRotate').addEventListener('click', () => setTransformMode('rotate'), false);
@@ -105,8 +160,6 @@ function addEventListeners() {
     document.getElementById('removeObject').addEventListener('click', removeObject);
     document.getElementById('saveScene').addEventListener('click', saveScene);
     document.getElementById('saveImageButton').addEventListener('click', saveSceneAsImage);
-    
-    // Add event listener for the new tile texture input
     document.getElementById('tileTextureInput').addEventListener('change', handleTileTextureInput);
 }
 
@@ -170,10 +223,22 @@ function createFloor() {
 
 function applySelectedTexture() {
     if (selectedWall && selectedTexture) {
+        const textureAspectRatio = selectedTexture.image.width / selectedTexture.image.height;
+        let objectAspectRatio = selectedWall.geometry.parameters.width / selectedWall.geometry.parameters.height;
+
+        let repeatX = 1, repeatY = 1;
+        if (textureAspectRatio > objectAspectRatio) {
+            repeatX = 3;
+            repeatY = 3 * (objectAspectRatio / textureAspectRatio);
+        } else {
+            repeatY = 3;
+            repeatX = 3 * (textureAspectRatio / objectAspectRatio);
+        }
+
         selectedTexture.wrapS = THREE.RepeatWrapping;
         selectedTexture.wrapT = THREE.RepeatWrapping;
+        selectedTexture.repeat.set(repeatX, repeatY);
         selectedTexture.center.set(0.5, 0.5);
-        selectedTexture.repeat.set(3, 3);
         selectedWall.material.map = selectedTexture;
         selectedWall.material.color.set(0xffffff);
         selectedWall.material.needsUpdate = true;
@@ -313,7 +378,16 @@ function handleModelFile(event) {
 
 function handleModelLoad(model, type) {
     model.rotation.set(0, 0, 0);
-    model.scale.set(1, 1, 1);
+
+    // Ajuster l'échelle en fonction du type de modèle
+    if (type === 'bidet') {
+        model.scale.set(0.05, 0.05, 0.05); // Réduction de l'échelle pour bidet
+    } else if (type === 'mirror') {
+        model.scale.set(0.03, 0.03, 0.03); // Réduction de l'échelle pour miroir
+    } else {
+        model.scale.set(0.1, 0.1, 0.1); // Échelle par défaut pour les autres objets
+    }
+
     centerModel(model);
 
     if (type === 'sink') {
@@ -458,16 +532,14 @@ function applyTextureToObject(object, textureSrc) {
 
 function saveSceneAsImage() {
     try {
-        // Render the scene and get the image as a data URL
         renderer.render(scene, camera);
-        const dataURL = renderer.domElement.toDataURL('image/png'); // Change to 'image/jpeg' for JPG format
+        const dataURL = renderer.domElement.toDataURL('image/png');
 
-        // Create a temporary anchor element to trigger the download
         const a = document.createElement('a');
         a.href = dataURL;
-        a.download = 'bathroom_scene.png'; // Set the file name and extension
+        a.download = 'bathroom_scene.png';
         document.body.appendChild(a);
-        a.click(); // Trigger the download
+        a.click();
         document.body.removeChild(a);
 
         alert('La scène a été sauvegardée en tant qu\'image!');
@@ -477,7 +549,6 @@ function saveSceneAsImage() {
     }
 }
 
-// New function to handle tile texture import from a local file
 function handleTileTextureInput(event) {
     const file = event.target.files[0];
     if (file) {
