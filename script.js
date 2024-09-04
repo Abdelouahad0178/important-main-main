@@ -19,6 +19,7 @@ let selectedTexture = null;
 let textureRotationAngle = 0;
 let clickCount = 0;
 let clickTimer;
+let lastTapTime = 0; // Variable to track double-tap timing for touch devices
 
 // Liste des modèles à charger avec leurs types et chargeurs respectifs
 const modelsToLoad = [
@@ -94,7 +95,6 @@ function loadModel(path, type, loader) {
             sceneObject = model; // Pour OBJLoader
         }
 
-        // Ajuster l'échelle en fonction du type de modèle
         if (type === 'bidet') {
             sceneObject.scale.set(0.001, 0.001, 0.001); // Réduction de l'échelle pour bidet
         } else if (type === 'mirror') {
@@ -285,6 +285,14 @@ function handleInteraction(event) {
     if (event.type === 'touchstart' && event.touches.length > 0) {
         clientX = event.touches[0].clientX;
         clientY = event.touches[0].clientY;
+
+        // Detect double-tap on touch devices
+        const currentTime = new Date().getTime();
+        const tapGap = currentTime - lastTapTime;
+        if (tapGap < 300 && tapGap > 0) { // Time between taps to be considered a double tap
+            onDoubleClick(event); // Trigger double-click function
+        }
+        lastTapTime = currentTime;
     } else {
         clientX = event.clientX;
         clientY = event.clientY;
@@ -306,8 +314,12 @@ function handleInteraction(event) {
 }
 
 function onDoubleClick(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    // Calculate mouse/touch coordinates
+    let clientX = event.clientX || event.touches[0].clientX;
+    let clientY = event.clientY || event.touches[0].clientY;
+
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(objects, true);
@@ -316,6 +328,7 @@ function onDoubleClick(event) {
         const clickedObject = intersects[0].object;
         let parentObject = clickedObject;
 
+        // Traverse up to find the root movable object
         while (parentObject && !parentObject.userData.isMovable) {
             parentObject = parentObject.parent;
         }
