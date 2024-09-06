@@ -37,7 +37,9 @@
             <label for="tileTextureInput" class="file-label">Importer Carrelage</label>
 
             <button id="saveScene" class="btn">Sauvegarder Scène</button>
-            <button id="saveImageButton" class="btn">Sauvegarder l'image</button>
+            <button id="loadSceneButton" class="btn">Charger Scène</button>
+            <input type="file" id="loadSceneInput" accept=".json" style="display: none;">
+
             <button id="modeTranslate" class="btn">Déplacement</button>
             <button id="modeRotate" class="btn">Rotation</button>
         </div>
@@ -56,6 +58,7 @@
         <img src="/images/b_fondovalle_urban_craft_ubc007_plaster120x278.webp" class="texture-option" alt="Urban Craft Plaster">
     </div>
 
+    <!-- Three.js and required loaders -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
@@ -63,6 +66,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
 
+    <!-- Main Script -->
     <script src="script.js"></script>
 </body>
 </html>

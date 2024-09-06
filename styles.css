@@ -23,10 +23,12 @@ canvas {
     flex-wrap: wrap;
 }
 
-
-#saveScene ,#printScene{
+ #printScene {
     display: none;
 }
+
+
+
 
 .file-inputs, .action-buttons {
     display: flex;
@@ -59,6 +61,7 @@ canvas {
     margin: 5px;
     width: 150px;
 }
+
 .texture-palette {
     position: fixed;
     right: 10px;
@@ -67,9 +70,9 @@ canvas {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    overflow-y: scroll; /* Ajoute le défilement vertical */
-    max-height: calc(100vh - 100px); /* Limite la hauteur pour permettre le défilement */
-    padding-right: 10px; /* Pour éviter le chevauchement avec la barre de défilement */
+    overflow-y: scroll;
+    max-height: calc(100vh - 100px);
+    padding-right: 10px;
 }
 
 .texture-option {
@@ -97,7 +100,6 @@ canvas {
     }
 }
 
-
 .hidden {
-    display: none; /* Masque les éléments */
+    display: none;
 }

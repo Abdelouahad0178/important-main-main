@@ -1,4 +1,4 @@
-// Variables globales
+// Global Variables
 let scene, camera, renderer, controls, transformControls;
 let walls = [], floor;
 let objects = [];
@@ -19,19 +19,20 @@ let selectedTexture = null;
 let textureRotationAngle = 0;
 let clickCount = 0;
 let clickTimer;
-let lastTapTime = 0; // Variable to track double-tap timing for touch devices
+let lastTapTime = 0;
 
-// Liste des modèles à charger avec leurs types et chargeurs respectifs
+// Models to Load
 const modelsToLoad = [
     { path: '/images/LAVABO.glb', type: 'sink', loader: gltfLoader },
     { path: '/images/bidet.glb', type: 'bidet', loader: gltfLoader },
     { path: '/images/mdlwclock02.obj', type: 'mirror', loader: objLoader },
 ];
 
+// Initialize Scene and Add Event Listeners
 document.addEventListener('DOMContentLoaded', function () {
     init();
     addEventListeners();
-    loadMultipleModels(); // Charge tous les modèles de la liste
+    loadMultipleModels();
 });
 
 function init() {
@@ -78,29 +79,89 @@ function init() {
     animate();
 }
 
-// Charge plusieurs modèles à partir de la liste
+function addEventListeners() {
+    const translateButton = document.getElementById('modeTranslate');
+    const rotateButton = document.getElementById('modeRotate');
+    const lightSlider = document.getElementById('lightIntensity');
+    const searchTileInput = document.getElementById('searchTile');
+    const sinkModelInput = document.getElementById('sinkModelInput');
+    const addSinkButton = document.getElementById('addSink');
+    const addMirrorButton = document.getElementById('addMirror');
+    const addBidetButton = document.getElementById('addBidet');
+    const removeObjectButton = document.getElementById('removeObject');
+    const saveSceneButton = document.getElementById('saveScene');
+    const loadSceneButton = document.getElementById('loadSceneButton');
+    const loadSceneInput = document.getElementById('loadSceneInput');
+    const tileTextureInput = document.getElementById('tileTextureInput');
+
+    if (translateButton) translateButton.addEventListener('click', () => setTransformMode('translate'), false);
+    if (rotateButton) rotateButton.addEventListener('click', () => setTransformMode('rotate'), false);
+    if (lightSlider) lightSlider.addEventListener('input', function (event) {
+        const intensity = parseFloat(event.target.value);
+        const ambientLight = scene.getObjectByProperty('type', 'AmbientLight');
+        if (ambientLight) {
+            ambientLight.intensity = intensity;
+        }
+    });
+    if (searchTileInput) searchTileInput.addEventListener('input', filterTiles);
+    if (sinkModelInput) sinkModelInput.addEventListener('change', event => handleModelFile(event), false);
+    if (addSinkButton) addSinkButton.addEventListener('click', () => {
+        if (sinkModel) {
+            addObject(sinkModel.clone(), 'sink');
+        } else {
+            alert('Veuillez d\'abord charger un modèle de lavabo.');
+        }
+    });
+    if (addMirrorButton) addMirrorButton.addEventListener('click', () => {
+        if (mirrorModel) {
+            addObject(mirrorModel.clone(), 'mirror');
+        } else {
+            alert('Veuillez d\'abord charger un modèle de miroir.');
+        }
+    });
+    if (addBidetButton) addBidetButton.addEventListener('click', () => {
+        if (bidetModel) {
+            addObject(bidetModel.clone(), 'bidet');
+        } else {
+            alert('Veuillez d\'abord charger un modèle de bidet.');
+        }
+    });
+    if (removeObjectButton) removeObjectButton.addEventListener('click', removeObject);
+    if (saveSceneButton) saveSceneButton.addEventListener('click', saveScene);
+    if (loadSceneButton) {
+        loadSceneButton.addEventListener('click', () => {
+            loadSceneInput.click();
+        });
+    }
+    loadSceneInput.addEventListener('change', function (event) {
+        if (event.target.files.length > 0) {
+            loadScene(event.target.files[0]);
+        }
+    });
+    if (tileTextureInput) tileTextureInput.addEventListener('change', handleTileTextureInput);
+}
+
 function loadMultipleModels() {
     modelsToLoad.forEach(model => {
         loadModel(model.path, model.type, model.loader);
     });
 }
 
-// Fonction générique pour charger un modèle avec le bon chargeur
 function loadModel(path, type, loader) {
     loader.load(path, function (model) {
         let sceneObject;
         if (type === 'sink' || type === 'bidet') {
-            sceneObject = model.scene; // Pour GLTFLoader
+            sceneObject = model.scene;
         } else {
-            sceneObject = model; // Pour OBJLoader
+            sceneObject = model;
         }
 
         if (type === 'bidet') {
-            sceneObject.scale.set(0.001, 0.001, 0.001); // Réduction de l'échelle pour bidet
+            sceneObject.scale.set(0.001, 0.001, 0.001);
         } else if (type === 'mirror') {
-            sceneObject.scale.set(0.01, 0.01, 0.01); // Réduction de l'échelle pour miroir
+            sceneObject.scale.set(0.01, 0.01, 0.01);
         } else {
-            sceneObject.scale.set(0.1, 0.1, 0.1); // Échelle par défaut pour les autres objets
+            sceneObject.scale.set(0.1, 0.1, 0.1);
         }
 
         sceneObject.position.set(Math.random() * 2 - 1, 0, Math.random() * 2 - 2.4);
@@ -122,45 +183,6 @@ function loadModel(path, type, loader) {
     }, undefined, function (error) {
         console.error(`Erreur de chargement du modèle ${type} depuis ${path} :`, error);
     });
-}
-
-function addEventListeners() {
-    document.getElementById('modeTranslate').addEventListener('click', () => setTransformMode('translate'), false);
-    document.getElementById('modeRotate').addEventListener('click', () => setTransformMode('rotate'), false);
-    document.getElementById('lightIntensity').addEventListener('input', function (event) {
-        const intensity = parseFloat(event.target.value);
-        const ambientLight = scene.getObjectByProperty('type', 'AmbientLight');
-        if (ambientLight) {
-            ambientLight.intensity = intensity;
-        }
-    });
-    document.getElementById('searchTile').addEventListener('input', filterTiles);
-    document.getElementById('sinkModelInput').addEventListener('change', event => handleModelFile(event), false);
-    document.getElementById('addSink').addEventListener('click', () => {
-        if (sinkModel) {
-            addObject(sinkModel.clone(), 'sink');
-        } else {
-            alert('Veuillez d\'abord charger un modèle de lavabo.');
-        }
-    });
-    document.getElementById('addMirror').addEventListener('click', () => {
-        if (mirrorModel) {
-            addObject(mirrorModel.clone(), 'mirror');
-        } else {
-            alert('Veuillez d\'abord charger un modèle de miroir.');
-        }
-    });
-    document.getElementById('addBidet').addEventListener('click', () => {
-        if (bidetModel) {
-            addObject(bidetModel.clone(), 'bidet');
-        } else {
-            alert('Veuillez d\'abord charger un modèle de bidet.');
-        }
-    });
-    document.getElementById('removeObject').addEventListener('click', removeObject);
-    document.getElementById('saveScene').addEventListener('click', saveScene);
-    document.getElementById('saveImageButton').addEventListener('click', saveSceneAsImage);
-    document.getElementById('tileTextureInput').addEventListener('change', handleTileTextureInput);
 }
 
 function initializeTextureEvents() {
@@ -247,19 +269,6 @@ function applySelectedTexture() {
     }
 }
 
-function adjustTextureRotation() {
-    if (selectedWall && selectedWall.material.map) {
-        textureRotationAngle += Math.PI / 2;
-        if (textureRotationAngle >= 2 * Math.PI) {
-            textureRotationAngle = 0;
-        }
-        selectedWall.material.map.rotation = textureRotationAngle;
-        selectedWall.material.needsUpdate = true;
-    } else {
-        console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
-    }
-}
-
 function handleTripleClick() {
     clickCount++;
     if (clickCount === 3) {
@@ -271,6 +280,19 @@ function handleTripleClick() {
     clickTimer = setTimeout(() => {
         clickCount = 0;
     }, 500);
+}
+
+function adjustTextureRotation() {
+    if (selectedWall && selectedWall.material.map) {
+        textureRotationAngle += Math.PI / 2;
+        if (textureRotationAngle >= 2 * Math.PI) {
+            textureRotationAngle = 0;
+        }
+        selectedWall.material.map.rotation = textureRotationAngle;
+        selectedWall.material.needsUpdate = true;
+    } else {
+        console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
+    }
 }
 
 function selectWall(wall) {
@@ -286,11 +308,10 @@ function handleInteraction(event) {
         clientX = event.touches[0].clientX;
         clientY = event.touches[0].clientY;
 
-        // Detect double-tap on touch devices
         const currentTime = new Date().getTime();
         const tapGap = currentTime - lastTapTime;
-        if (tapGap < 300 && tapGap > 0) { // Time between taps to be considered a double tap
-            onDoubleClick(event); // Trigger double-click function
+        if (tapGap < 300 && tapGap > 0) {
+            onDoubleClick(event);
         }
         lastTapTime = currentTime;
     } else {
@@ -314,7 +335,6 @@ function handleInteraction(event) {
 }
 
 function onDoubleClick(event) {
-    // Calculate mouse/touch coordinates
     let clientX = event.clientX || event.touches[0].clientX;
     let clientY = event.clientY || event.touches[0].clientY;
 
@@ -328,7 +348,6 @@ function onDoubleClick(event) {
         const clickedObject = intersects[0].object;
         let parentObject = clickedObject;
 
-        // Traverse up to find the root movable object
         while (parentObject && !parentObject.userData.isMovable) {
             parentObject = parentObject.parent;
         }
@@ -392,13 +411,12 @@ function handleModelFile(event) {
 function handleModelLoad(model, type) {
     model.rotation.set(0, 0, 0);
 
-    // Ajuster l'échelle en fonction du type de modèle
     if (type === 'bidet') {
-        model.scale.set(0.05, 0.05, 0.05); // Réduction de l'échelle pour bidet
+        model.scale.set(0.05, 0.05, 0.05);
     } else if (type === 'mirror') {
-        model.scale.set(0.03, 0.03, 0.03); // Réduction de l'échelle pour miroir
+        model.scale.set(0.03, 0.03, 0.03);
     } else {
-        model.scale.set(0.1, 0.1, 0.1); // Échelle par défaut pour les autres objets
+        model.scale.set(0.1, 0.1, 0.1);
     }
 
     centerModel(model);
@@ -466,12 +484,22 @@ function saveScene() {
             walls: walls.map(wall => ({
                 position: wall.position.toArray(),
                 rotation: wall.rotation.toArray(),
-                texture: wall.material.map ? wall.material.map.image.src : null
+                texture: wall.material.map ? {
+                    src: wall.material.map.image.src,
+                    repeat: wall.material.map.repeat.toArray(),
+                    wrapS: wall.material.map.wrapS,
+                    wrapT: wall.material.map.wrapT
+                } : null
             })),
             floor: {
                 position: floor.position.toArray(),
                 rotation: floor.rotation.toArray(),
-                texture: floor.material.map ? floor.material.map.image.src : null
+                texture: floor.material.map ? {
+                    src: floor.material.map.image.src,
+                    repeat: floor.material.map.repeat.toArray(),
+                    wrapS: floor.material.map.wrapS,
+                    wrapT: floor.material.map.wrapT
+                } : null
             },
             objects: objects.filter(obj => obj.userData.isMovable).map(obj => ({
                 type: obj.userData.type,
@@ -481,85 +509,95 @@ function saveScene() {
             }))
         };
 
-        localStorage.setItem('bathroomScene', JSON.stringify(sceneData));
-        alert('Scène sauvegardée avec succès!');
+        const sceneJSON = JSON.stringify(sceneData, null, 2);
+        const blob = new Blob([sceneJSON], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'scene.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        alert('Scène sauvegardée en tant que fichier JSON!');
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de la scène :', error);
         alert('Erreur lors de la sauvegarde de la scène. Veuillez vérifier les paramètres et réessayer.');
     }
 }
 
-function loadScene() {
-    const sceneData = JSON.parse(localStorage.getItem('bathroomScene'));
-    if (sceneData) {
-        sceneData.walls.forEach((wallData, index) => {
-            walls[index].position.fromArray(wallData.position);
-            walls[index].rotation.fromArray(wallData.rotation);
-            if (wallData.texture) {
-                applyTextureToObject(walls[index], wallData.texture);
-            }
-        });
+function loadScene(file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const sceneData = JSON.parse(e.target.result);
 
-        floor.position.fromArray(sceneData.floor.position);
-        floor.rotation.fromArray(sceneData.floor.rotation);
-        if (sceneData.floor.texture) {
-            applyTextureToObject(floor, sceneData.floor.texture);
+            objects.forEach(obj => {
+                if (obj.userData.isMovable) {
+                    scene.remove(obj);
+                }
+            });
+            objects = objects.filter(obj => !obj.userData.isMovable);
+
+            sceneData.walls.forEach((wallData, index) => {
+                walls[index].position.fromArray(wallData.position);
+                walls[index].rotation.fromArray(wallData.rotation);
+                if (wallData.texture) {
+                    applyTextureToObject(walls[index], wallData.texture);
+                }
+            });
+
+            floor.position.fromArray(sceneData.floor.position);
+            floor.rotation.fromArray(sceneData.floor.rotation);
+            if (sceneData.floor.texture) {
+                applyTextureToObject(floor, sceneData.floor.texture);
+            }
+
+            sceneData.objects.forEach(objData => {
+                let model;
+                switch (objData.type) {
+                    case 'sink':
+                        model = sinkModel;
+                        break;
+                    case 'mirror':
+                        model = mirrorModel;
+                        break;
+                    case 'bidet':
+                        model = bidetModel;
+                        break;
+                }
+                if (model) {
+                    const newObj = model.clone();
+                    newObj.position.fromArray(objData.position);
+                    newObj.rotation.fromArray(objData.rotation);
+                    newObj.scale.fromArray(objData.scale);
+                    newObj.userData.type = objData.type;
+                    newObj.userData.isMovable = true;
+                    scene.add(newObj);
+                    objects.push(newObj);
+                }
+            });
+
+            alert('Scène chargée avec succès!');
+        } catch (error) {
+            console.error("Erreur lors du chargement de la scène :", error);
+            alert("Erreur lors du chargement de la scène. Veuillez vérifier le fichier.");
         }
-
-        sceneData.objects.forEach(objData => {
-            let model;
-            switch (objData.type) {
-                case 'sink':
-                    model = sinkModel;
-                    break;
-                case 'mirror':
-                    model = mirrorModel;
-                    break;
-                case 'bidet':
-                    model = bidetModel;
-                    break;
-            }
-            if (model) {
-                const newObj = model.clone();
-                newObj.position.fromArray(objData.position);
-                newObj.rotation.fromArray(objData.rotation);
-                newObj.scale.fromArray(objData.scale);
-                newObj.userData.type = objData.type;
-                newObj.userData.isMovable = true;
-                scene.add(newObj);
-                objects.push(newObj);
-            }
-        });
-    } else {
-        console.log('Aucune scène sauvegardée trouvée');
-    }
+    };
+    reader.readAsText(file);
 }
 
-function applyTextureToObject(object, textureSrc) {
+function applyTextureToObject(object, textureData) {
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(textureSrc, (texture) => {
+    textureLoader.load(textureData.src, (texture) => {
+        texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
+        texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
+        texture.repeat.fromArray(textureData.repeat || [1, 1]);
         object.material.map = texture;
         object.material.needsUpdate = true;
     });
-}
-
-function saveSceneAsImage() {
-    try {
-        renderer.render(scene, camera);
-        const dataURL = renderer.domElement.toDataURL('image/png');
-
-        const a = document.createElement('a');
-        a.href = dataURL;
-        a.download = 'bathroom_scene.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        alert('La scène a été sauvegardée en tant qu\'image!');
-    } catch (error) {
-        console.error('Erreur lors de la sauvegarde de la scène en image :', error);
-        alert('Erreur lors de la sauvegarde de l\'image. Veuillez réessayer.');
-    }
 }
 
 function handleTileTextureInput(event) {
