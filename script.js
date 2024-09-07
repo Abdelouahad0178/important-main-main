@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     init();
     addEventListeners();
     loadMultipleModels();
+    loadTexturesFromJSON(); // Load textures from merged.json
 });
 
 function init() {
@@ -186,6 +187,38 @@ function loadModel(path, type, loader) {
     });
 }
 
+// Function to load images from merged.json and populate the texture palette
+function loadTexturesFromJSON() {
+    fetch('merged.json')
+        .then(response => response.json())
+        .then(data => {
+            const textureList = document.querySelector('.texture-list');
+            textureList.innerHTML = ''; // Clear any existing images
+
+            data.forEach(texture => {
+                const img = document.createElement('img');
+                img.src = texture.src;
+                img.alt = texture.alt;
+                img.classList.add('texture-option');
+                img.setAttribute('draggable', true);
+
+                // Add event listeners for interaction
+                img.addEventListener('click', () => {
+                    const textureLoader = new THREE.TextureLoader();
+                    selectedTexture = textureLoader.load(img.src, () => {
+                        applySelectedTexture();
+                    });
+                });
+
+                img.addEventListener('dragstart', onTextureDragStart);
+
+                // Append to the texture list
+                textureList.appendChild(img);
+            });
+        })
+        .catch(error => console.error('Error loading textures:', error));
+}
+
 function initializeTextureEvents() {
     document.querySelectorAll('.texture-option').forEach((img) => {
         img.addEventListener('click', () => {
@@ -195,12 +228,10 @@ function initializeTextureEvents() {
             });
         });
 
-        // Ajout des événements de drag start pour les images de texture
         img.setAttribute('draggable', true);
         img.addEventListener('dragstart', onTextureDragStart);
     });
 
-    // Ajout des événements de dragover et drop sur le canvas pour appliquer la texture
     renderer.domElement.addEventListener('dragover', onDragOver);
     renderer.domElement.addEventListener('drop', onTextureDrop);
 }
@@ -212,7 +243,7 @@ function onTextureDragStart(event) {
 }
 
 function onDragOver(event) {
-    event.preventDefault(); // Permet le drop
+    event.preventDefault();
 }
 
 function onTextureDrop(event) {
@@ -226,12 +257,8 @@ function onTextureDrop(event) {
 
     if (intersects.length > 0 && draggedTexture) {
         const targetObject = intersects[0].object;
-
-        // Appliquer la texture glissée à la surface cible
         targetObject.material.map = draggedTexture;
         targetObject.material.needsUpdate = true;
-
-        // Réinitialiser la texture après application
         draggedTexture = null;
     }
 }
@@ -305,7 +332,6 @@ function applySelectedTexture() {
         selectedWall.material.color.set(0xffffff);
         selectedWall.material.needsUpdate = true;
 
-        // Clear the selected texture after applying it to avoid accidental reuse
         selectedTexture = null;
         selectedWall = null;
     } else {
@@ -342,7 +368,6 @@ function handleInteraction(event) {
     if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
         if (walls.includes(clickedObject) || clickedObject === floor) {
-            // Update only when a new selection is made
             selectedWall = clickedObject;
             handleTripleClick();
         }
@@ -658,6 +683,5 @@ function handleTileTextureInput(event) {
         };
         reader.readAsDataURL(file);
     }
-    // Reset the input value to allow the same file to be loaded again
     event.target.value = '';
 }
