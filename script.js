@@ -20,6 +20,7 @@ let textureRotationAngle = 0;
 let clickCount = 0;
 let clickTimer;
 let lastTapTime = 0;
+let draggedTexture = null;
 
 // Models to Load
 const modelsToLoad = [
@@ -193,7 +194,46 @@ function initializeTextureEvents() {
                 applySelectedTexture();
             });
         });
+
+        // Ajout des événements de drag start pour les images de texture
+        img.setAttribute('draggable', true);
+        img.addEventListener('dragstart', onTextureDragStart);
     });
+
+    // Ajout des événements de dragover et drop sur le canvas pour appliquer la texture
+    renderer.domElement.addEventListener('dragover', onDragOver);
+    renderer.domElement.addEventListener('drop', onTextureDrop);
+}
+
+function onTextureDragStart(event) {
+    const imgSrc = event.target.src;
+    const textureLoader = new THREE.TextureLoader();
+    draggedTexture = textureLoader.load(imgSrc);
+}
+
+function onDragOver(event) {
+    event.preventDefault(); // Permet le drop
+}
+
+function onTextureDrop(event) {
+    event.preventDefault();
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects([...walls, floor], true);
+
+    if (intersects.length > 0 && draggedTexture) {
+        const targetObject = intersects[0].object;
+
+        // Appliquer la texture glissée à la surface cible
+        targetObject.material.map = draggedTexture;
+        targetObject.material.needsUpdate = true;
+
+        // Réinitialiser la texture après application
+        draggedTexture = null;
+    }
 }
 
 function filterTiles() {
@@ -246,7 +286,7 @@ function createFloor() {
 function applySelectedTexture() {
     if (selectedWall && selectedTexture) {
         const textureAspectRatio = selectedTexture.image.width / selectedTexture.image.height;
-        let objectAspectRatio = selectedWall.geometry.parameters.width / selectedWall.geometry.parameters.height;
+        const objectAspectRatio = selectedWall.geometry.parameters.width / selectedWall.geometry.parameters.height;
 
         let repeatX = 1, repeatY = 1;
         if (textureAspectRatio > objectAspectRatio) {
@@ -264,39 +304,13 @@ function applySelectedTexture() {
         selectedWall.material.map = selectedTexture;
         selectedWall.material.color.set(0xffffff);
         selectedWall.material.needsUpdate = true;
+
+        // Clear the selected texture after applying it to avoid accidental reuse
+        selectedTexture = null;
+        selectedWall = null;
     } else {
         console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
     }
-}
-
-function handleTripleClick() {
-    clickCount++;
-    if (clickCount === 3) {
-        adjustTextureRotation();
-        clickCount = 0;
-    }
-
-    clearTimeout(clickTimer);
-    clickTimer = setTimeout(() => {
-        clickCount = 0;
-    }, 500);
-}
-
-function adjustTextureRotation() {
-    if (selectedWall && selectedWall.material.map) {
-        textureRotationAngle += Math.PI / 2;
-        if (textureRotationAngle >= 2 * Math.PI) {
-            textureRotationAngle = 0;
-        }
-        selectedWall.material.map.rotation = textureRotationAngle;
-        selectedWall.material.needsUpdate = true;
-    } else {
-        console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
-    }
-}
-
-function selectWall(wall) {
-    selectedWall = wall;
 }
 
 function handleInteraction(event) {
@@ -328,10 +342,41 @@ function handleInteraction(event) {
     if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
         if (walls.includes(clickedObject) || clickedObject === floor) {
-            selectWall(clickedObject);
+            // Update only when a new selection is made
+            selectedWall = clickedObject;
             handleTripleClick();
         }
     }
+}
+
+function handleTripleClick() {
+    clickCount++;
+    if (clickCount === 3) {
+        adjustTextureRotation();
+        clickCount = 0;
+    }
+
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => {
+        clickCount = 0;
+    }, 500);
+}
+
+function adjustTextureRotation() {
+    if (selectedWall && selectedWall.material.map) {
+        textureRotationAngle += Math.PI / 2;
+        if (textureRotationAngle >= 2 * Math.PI) {
+            textureRotationAngle = 0;
+        }
+        selectedWall.material.map.rotation = textureRotationAngle;
+        selectedWall.material.needsUpdate = true;
+    } else {
+        console.error('Veuillez sélectionner un mur ou le sol, puis une texture.');
+    }
+}
+
+function selectWall(wall) {
+    selectedWall = wall;
 }
 
 function onDoubleClick(event) {
@@ -613,4 +658,6 @@ function handleTileTextureInput(event) {
         };
         reader.readAsDataURL(file);
     }
+    // Reset the input value to allow the same file to be loaded again
+    event.target.value = '';
 }
