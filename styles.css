@@ -2,14 +2,12 @@ body {
     margin: 0;
     font-family: Arial, sans-serif;
     overflow: hidden;
-   
 }
 
 canvas {
     display: block;
     width: 100%;
     height: 100vh;
-   
 }
 
 .controls {
@@ -23,10 +21,6 @@ canvas {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-}
-
-#printScene {
-    display: none;
 }
 
 .file-inputs, .action-buttons {
@@ -98,10 +92,9 @@ canvas {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: calc(90vh - 160px); /* Adjust based on header and search bar height */
+    max-height: calc(90vh - 160px);
 }
 
-/* Individual tile images */
 .texture-option {
     width: 100%;
     cursor: pointer;
@@ -113,24 +106,6 @@ canvas {
 .texture-option:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .controls {
-        flex-direction: column;
-    }
-    
-    .file-inputs, .action-buttons {
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .file-label, .btn {
-        font-size: 12px;
-        padding: 6px 10px;
-    }
 }
 
 .hidden {

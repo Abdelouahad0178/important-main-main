@@ -11,24 +11,12 @@
 
     <div id="controls" class="controls">
         <div class="file-inputs">
-            <input type="file" id="textureInput" multiple accept="image/*" class="file-input">
-            <label for="textureInput" class="file-label hidden">Texture</label>
-
             <input type="file" id="sinkModelInput" accept=".gltf,.glb,.obj,.fbx" data-type="sink" class="file-input">
             <label for="sinkModelInput" class="file-label">Sanitaire</label>
-
-            <input type="file" id="mirrorModelInput" accept=".gltf,.glb,.obj,.fbx" data-type="mirror" class="file-input">
-            <label for="mirrorModelInput" class="file-label hidden">Miroir</label>
         </div>
         <div class="action-buttons">
-            <button id="changeWall1" class="btn hidden">Mur 1</button>
-            <button id="changeWall2" class="btn hidden">Mur 2</button>
-            <button id="changeFloor" class="btn hidden">Sol</button>
             <button id="addSink" class="btn">+ Sanitaire</button>
-            <button id="addMirror" class="btn hidden">+ Miroir</button>
-            <button id="addBidet" class="btn hidden">+ Bidet</button>
             <button id="removeObject" class="btn">Supprimer</button>
-            <button id="printScene" class="btn">Imprimer</button>
             <input type="range" id="lightIntensity" min="0" max="2" step="0.1" value="0.5" class="slider">
             <button id="undoAction" class="btn">Annuler</button>
             <button id="redoAction" class="btn">Rétablir</button>
@@ -42,23 +30,18 @@
 
             <button id="modeTranslate" class="btn">Déplacement</button>
             <button id="modeRotate" class="btn">Rotation</button>
+            <button id="dimensionScene" class="btn">Dimensionner Scène</button> <!-- Bouton ajouté -->
         </div>
     </div>
 
     <div id="texturePalette" class="texture-palette">
-        <div class="texture-palette-header">Textures</div>
         <input type="text" id="searchTile" placeholder="Recherche">
         <div class="texture-list">
-            <!-- Tile images will be dynamically loaded here -->
-            <!-- Example images: -->
-           
-            <!-- Add more images dynamically as needed -->
+            <!-- Les images des textures seront chargées dynamiquement ici -->
         </div>
     </div>
-    
-    
 
-    <!-- Three.js and required loaders -->
+    <!-- Bibliothèques Three.js et les chargeurs nécessaires -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
@@ -66,7 +49,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
 
-    <!-- Main Script -->
+    <!-- Script Principal -->
     <script src="script.js"></script>
 </body>
 </html>
